@@ -8,10 +8,16 @@ The `worker` pattern in Pear allows us to to create a single `core` logic to an 
 
 ## Overview
 
+
+https://github.com/user-attachments/assets/d44a05b8-a437-441d-91a8-46500c7d1f4e
+
+
 This library provides two main components:
 
 - **Server Router** (`./server`) - Handles incoming HTTP requests from the client
 - **Client Request Handler** (`./client`) - Replaces the global XMLHttpRequest to send requests through Pear pipes
+
+
 
 ## Installation
 
