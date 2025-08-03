@@ -17,7 +17,8 @@ This library provides two main components:
 - **Server Router** (`./server`) - Handles incoming HTTP requests from the client
 - **Client Request Handler** (`./client`) - Replaces the global XMLHttpRequest to send requests through Pear pipes
 
-
+See htmx here: https://htmx.org/. Headers can be returned to tell htmx to replace different targets, or the whole page if needed.
+Using XMLHTTPRequest directly; this could be used with a plain text (such as Terminal) UI.
 
 ## Installation
 
