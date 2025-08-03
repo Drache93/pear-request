@@ -1,0 +1,47 @@
+{
+  "name": "pear-request",
+  "version": "1.0.0",
+  "description": "XMLHttpRequest implementation for Pear workers with HTMX support - server router and client request handler",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./dist/router.d.ts",
+      "import": "./dist/router.js"
+    },
+    "./client": {
+      "types": "./dist/requests.d.ts",
+      "import": "./dist/requests.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev": "pear run -d .",
+    "build": "bun build src/* --outdir ./dist --packages=external",
+    "test": "brittle test/*.test.js"
+  },
+  "keywords": [
+    "pear",
+    "htmx",
+    "xmlhttprequest",
+    "worker",
+    "http",
+    "server",
+    "client"
+  ],
+  "author": "Pear Projects",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "brittle": "^3.0.0"
+  },
+  "dependencies": {
+    "b4a": "^1.6.7"
+  }
+}
