@@ -8,9 +8,15 @@ The `worker` pattern in Pear allows us to to create a single `core` logic to an 
 
 ## Overview
 
-
+### HTMX Hot-swapping UI
 https://github.com/user-attachments/assets/d44a05b8-a437-441d-91a8-46500c7d1f4e
 
+### Hot Swapping Terminal app
+https://github.com/user-attachments/assets/544dfca8-aab8-468c-b1a8-ceb445bc043f
+
+Any terminal worker pipe that supports the interface can render a UI we can work with.
+
+### Components
 
 This library provides two main components:
 
