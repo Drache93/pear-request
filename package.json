@@ -39,9 +39,11 @@
   "author": "Pear Projects",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@types/node": "^24.2.0",
     "brittle": "^3.0.0"
   },
   "dependencies": {
-    "b4a": "^1.6.7"
+    "b4a": "^1.6.7",
+    "holepunch-types": "github:Drache93/holepunch-types#main"
   }
 }

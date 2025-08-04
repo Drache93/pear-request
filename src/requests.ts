@@ -8,7 +8,6 @@ export function create(pipe: any) {
     events: Record<string, (event: any) => void> = {};
 
     addEventListener(event: string, callback: (event: any) => void) {
-      console.log("addEventListener", event, callback);
       this.events[event] = callback;
     }
   }
@@ -46,14 +45,12 @@ export function create(pipe: any) {
     }
 
     open(method: string, url: string) {
-      console.log("open", method, url);
       this.method = method;
       this.url = url;
       this.readyState = 1;
     }
 
     send(body: any) {
-      console.log("send", body);
       const id = crypto.randomUUID();
 
       this.readyState = 2;
@@ -84,7 +81,6 @@ export function create(pipe: any) {
     }
 
     addEventListener(event: string, callback: (event: any) => void) {
-      console.log("addEventListener", event, callback);
       this.events[event] = callback;
     }
   }
@@ -92,8 +88,6 @@ export function create(pipe: any) {
   pipe.on("data", (data: Uint8Array) => {
     const message = b4a.toString(data, "utf-8");
     const { id, body, headers } = JSON.parse(message);
-
-    console.log("from worker", message);
 
     const pendingRequest = pendingRequests[id];
     if (pendingRequest) {
@@ -103,7 +97,6 @@ export function create(pipe: any) {
       pendingRequest.status = 200;
       pendingRequest.statusText = "OK";
 
-      console.log("request", pendingRequest);
       pendingRequest["onload"]?.();
     }
   });
