@@ -6,6 +6,7 @@
       "dependencies": {
         "b4a": "^1.6.7",
         "holepunch-types": "github:Drache93/holepunch-types#main",
+        "url-pattern": "^1.0.3",
       },
       "devDependencies": {
         "@types/node": "^24.2.0",
@@ -129,6 +130,8 @@
     "undici-types": ["undici-types@7.10.0", "", {}, "sha512-t5Fy/nfn+14LuOc2KNYg75vZqClpAiqscVvMygNnlsHBFpSXdJaYtXMcdNLpl/Qvc3P2cB3s6lOV51nqsFq4ag=="],
 
     "url": ["bare-url@2.1.6", "", { "dependencies": { "bare-path": "^3.0.0" } }, "sha512-FgjDeR+/yDH34By4I0qB5NxAoWv7dOTYcOXwn73kr+c93HyC2lU6tnjifqUe33LKMJcDyCYPQjEAqgOQiXkE2Q=="],
+
+    "url-pattern": ["url-pattern@1.0.3", "", {}, "sha512-uQcEj/2puA4aq1R3A2+VNVBgaWYR24FdWjl7VNW83rnWftlhyzOZ/tBjezRiC2UkIzuxC8Top3IekN3vUf1WxA=="],
 
     "util": ["bare-utils@1.3.0", "", { "dependencies": { "bare-debug-log": "^2.0.0", "bare-encoding": "^1.0.0", "bare-format": "^1.0.0", "bare-inspect": "^3.0.0" } }, "sha512-s0wQMUw4tjaW5x+mknXPcmmX25v4D27+gqo5IavCpsjjgloA7ta7aXtt/tqlR4ADEUZe4ANzQiLRXrzuMxHdcA=="],
 

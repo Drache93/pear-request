@@ -24,8 +24,7 @@
   ],
   "scripts": {
     "dev": "pear run -d .",
-    "build": "bun build src/* --outdir ./dist --packages=external",
-    "test": "brittle test/*.test.js"
+    "build": "bun build src/* --outdir ./dist --packages=external"
   },
   "keywords": [
     "pear",
@@ -44,6 +43,7 @@
   },
   "dependencies": {
     "b4a": "^1.6.7",
-    "holepunch-types": "github:Drache93/holepunch-types#main"
+    "holepunch-types": "github:Drache93/holepunch-types#main",
+    "url-pattern": "^1.0.3"
   }
 }

@@ -1,4 +1,5 @@
 import b4a from "b4a";
+import URLPattern from "url-pattern";
 
 export interface RequestContext {
   method: string;
@@ -6,6 +7,7 @@ export interface RequestContext {
   body?: any;
   id: string;
   headers?: Record<string, string>;
+  params?: Record<string, string>;
 }
 
 export interface ResponseContext {
@@ -76,9 +78,23 @@ export class PearRequestRouter {
   async handleRequest(request: RequestContext) {
     const { method, url, id } = request;
 
+    // Extract path part from URL (remove query parameters)
+    // TODO: Handle query parameters
+    const path = url.split("?")[0] || url;
+
     // Find matching route
-    const route = this.routes.find(
-      (r) => r.method === method && r.path === url
+    const [route, params] = this.routes.reduce<[Route | null, any]>(
+      (acc, r) => {
+        const pattern = new URLPattern(r.path);
+        const match = pattern.match(path);
+
+        if (r.method.toLowerCase() !== method.toLowerCase()) {
+          return acc;
+        }
+
+        return match ? [r, match] : acc;
+      },
+      [null, null]
     );
 
     if (route) {
@@ -89,7 +105,7 @@ export class PearRequestRouter {
           headers: { "Content-Type": "text/html" },
         };
 
-        await route.handler(request, response);
+        await route.handler({ ...request, params }, response);
         this.sendResponse(response);
       } catch (error) {
         console.error("Route handler error:", error);
