@@ -1,5 +1,6 @@
 // src/router.ts
 import b4a from "b4a";
+import URLPattern from "url-pattern";
 
 class PearRequestRouter {
   routes = [];
@@ -33,7 +34,15 @@ class PearRequestRouter {
   }
   async handleRequest(request) {
     const { method, url, id } = request;
-    const route = this.routes.find((r) => r.method === method && r.path === url);
+    const path = url.split("?")[0] || url;
+    const [route, params] = this.routes.reduce((acc, r) => {
+      const pattern = new URLPattern(r.path);
+      const match = pattern.match(path);
+      if (r.method.toLowerCase() !== method.toLowerCase()) {
+        return acc;
+      }
+      return match ? [r, match] : acc;
+    }, [null, null]);
     if (route) {
       try {
         const response = {
@@ -41,7 +50,7 @@ class PearRequestRouter {
           body: "",
           headers: { "Content-Type": "text/html" }
         };
-        await route.handler(request, response);
+        await route.handler({ ...request, params }, response);
         this.sendResponse(response);
       } catch (error) {
         console.error("Route handler error:", error);
@@ -75,7 +84,6 @@ function create(pipe) {
   class PearRequestUpload {
     events = {};
     addEventListener(event, callback) {
-      console.log("addEventListener", event, callback);
       this.events[event] = callback;
     }
   }
@@ -105,13 +113,11 @@ function create(pipe) {
       return this.mimeType;
     }
     open(method, url) {
-      console.log("open", method, url);
       this.method = method;
       this.url = url;
       this.readyState = 1;
     }
     send(body) {
-      console.log("send", body);
       const id = crypto.randomUUID();
       this.readyState = 2;
       pendingRequests[id] = this;
@@ -130,14 +136,12 @@ function create(pipe) {
       this.headers[header] = value;
     }
     addEventListener(event, callback) {
-      console.log("addEventListener", event, callback);
       this.events[event] = callback;
     }
   }
   pipe.on("data", (data) => {
     const message = b4a2.toString(data, "utf-8");
     const { id, body, headers } = JSON.parse(message);
-    console.log("from worker", message);
     const pendingRequest = pendingRequests[id];
     if (pendingRequest) {
       pendingRequest.readyState = 4;
@@ -145,7 +149,6 @@ function create(pipe) {
       pendingRequest._responseHeaders = headers;
       pendingRequest.status = 200;
       pendingRequest.statusText = "OK";
-      console.log("request", pendingRequest);
       pendingRequest["onload"]?.();
     }
   });

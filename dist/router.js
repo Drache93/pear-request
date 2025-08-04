@@ -1,5 +1,6 @@
 // src/router.ts
 import b4a from "b4a";
+import URLPattern from "url-pattern";
 
 class PearRequestRouter {
   routes = [];
@@ -33,7 +34,15 @@ class PearRequestRouter {
   }
   async handleRequest(request) {
     const { method, url, id } = request;
-    const route = this.routes.find((r) => r.method === method && r.path === url);
+    const path = url.split("?")[0] || url;
+    const [route, params] = this.routes.reduce((acc, r) => {
+      const pattern = new URLPattern(r.path);
+      const match = pattern.match(path);
+      if (r.method.toLowerCase() !== method.toLowerCase()) {
+        return acc;
+      }
+      return match ? [r, match] : acc;
+    }, [null, null]);
     if (route) {
       try {
         const response = {
@@ -41,7 +50,7 @@ class PearRequestRouter {
           body: "",
           headers: { "Content-Type": "text/html" }
         };
-        await route.handler(request, response);
+        await route.handler({ ...request, params }, response);
         this.sendResponse(response);
       } catch (error) {
         console.error("Route handler error:", error);

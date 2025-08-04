@@ -6,7 +6,6 @@ function create(pipe) {
   class PearRequestUpload {
     events = {};
     addEventListener(event, callback) {
-      console.log("addEventListener", event, callback);
       this.events[event] = callback;
     }
   }
@@ -36,13 +35,11 @@ function create(pipe) {
       return this.mimeType;
     }
     open(method, url) {
-      console.log("open", method, url);
       this.method = method;
       this.url = url;
       this.readyState = 1;
     }
     send(body) {
-      console.log("send", body);
       const id = crypto.randomUUID();
       this.readyState = 2;
       pendingRequests[id] = this;
@@ -61,14 +58,12 @@ function create(pipe) {
       this.headers[header] = value;
     }
     addEventListener(event, callback) {
-      console.log("addEventListener", event, callback);
       this.events[event] = callback;
     }
   }
   pipe.on("data", (data) => {
     const message = b4a.toString(data, "utf-8");
     const { id, body, headers } = JSON.parse(message);
-    console.log("from worker", message);
     const pendingRequest = pendingRequests[id];
     if (pendingRequest) {
       pendingRequest.readyState = 4;
@@ -76,7 +71,6 @@ function create(pipe) {
       pendingRequest._responseHeaders = headers;
       pendingRequest.status = 200;
       pendingRequest.statusText = "OK";
-      console.log("request", pendingRequest);
       pendingRequest["onload"]?.();
     }
   });
