@@ -45,19 +45,26 @@ export class PearRequestRouter {
   }
 
   // Send response through the pipe
-  private sendResponse(response: ResponseContext) {
-    const body = Buffer.isBuffer(response.body)
-      ? response.body
-      : Buffer.from(response.body, "utf-8");
+  private async sendResponse(response: ResponseContext) {
+    const body = response.body
+      ? Buffer.isBuffer(response.body)
+        ? response.body
+        : Buffer.from(response.body, "utf-8")
+      : Buffer.alloc(0);
 
-    this.pipe.write(
-      cenc.encode(responseEncoding, {
-        id: response.id,
-        body: body,
-        headers: response.headers || { "Content-Type": "text/html" },
-        status: response.status || 200,
-      })
-    );
+    const message = {
+      id: response.id,
+      body: body,
+      headers: response.headers || { "Content-Type": "text/html" },
+      status: response.status || 200,
+    };
+    const encoded = cenc.encode(responseEncoding, message);
+    const encodedLength = cenc.encode(cenc.uint32, encoded.length);
+
+    const canWrite = this.pipe.write(Buffer.concat([encodedLength, encoded]));
+    if (!canWrite) {
+      await new Promise((resolve) => this.pipe.once("drain", resolve));
+    }
   }
 
   // Handle incoming request
@@ -91,12 +98,15 @@ export class PearRequestRouter {
       try {
         const response: ResponseContext = {
           id,
-          body: Buffer.from("", "utf-8"),
+          body: null,
           headers: { "Content-Type": "text/html" },
         };
 
         await route.handler({ ...request, params }, response);
-        this.sendResponse(response);
+
+        console.log("response", response);
+
+        await this.sendResponse(response);
       } catch (error) {
         console.error("Route handler error:", error);
         this.sendResponse({

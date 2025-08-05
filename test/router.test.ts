@@ -17,7 +17,7 @@ test("router pattern matching with parameters", async (t) => {
   // Test basic parameter extraction
   router.post("/api/projects/:id/upvote", (req, res) => {
     t.is(req.params?.id, "123");
-    res.body = `User ${req.params?.id}`;
+    res.body = Buffer.from(`User ${req.params?.id}`, "utf-8");
   });
 
   await router.processMessage({
@@ -38,7 +38,10 @@ test("router pattern matching with multiple parameters", async (t) => {
   router.get("/users/:userId/posts/:postId", (req, res) => {
     t.is(req.params?.userId, "456");
     t.is(req.params?.postId, "789");
-    res.body = `User ${req.params?.userId}, Post ${req.params?.postId}`;
+    res.body = Buffer.from(
+      `User ${req.params?.userId}, Post ${req.params?.postId}`,
+      "utf-8"
+    );
   });
 
   await router.processMessage({
@@ -57,7 +60,7 @@ test("router pattern matching with query parameters", async (t) => {
 
   router.get("/search", (req, res) => {
     t.is(req.url, "/search?q=test&page=1");
-    res.body = "Search results";
+    res.body = Buffer.from("Search results", "utf-8");
   });
 
   await router.processMessage({
@@ -76,7 +79,10 @@ test("router pattern matching with required parameters", async (t) => {
 
   router.get("/blog/:year/:month/:day", (req, res) => {
     const params = req.params || {};
-    res.body = `Blog: ${params.year}/${params.month}/${params.day}`;
+    res.body = Buffer.from(
+      `Blog: ${params.year}/${params.month}/${params.day}`,
+      "utf-8"
+    );
   });
 
   // Test with all parameters
@@ -104,19 +110,19 @@ test("router pattern matching with different HTTP methods", async (t) => {
   const router = new PearRequestRouter(pipe);
 
   router.get("/users/:id", (req, res) => {
-    res.body = `GET User ${req.params?.id}`;
+    res.body = Buffer.from(`GET User ${req.params?.id}`, "utf-8");
   });
 
   router.post("/users/:id", (req, res) => {
-    res.body = `POST User ${req.params?.id}`;
+    res.body = Buffer.from(`POST User ${req.params?.id}`, "utf-8");
   });
 
   router.put("/users/:id", (req, res) => {
-    res.body = `PUT User ${req.params?.id}`;
+    res.body = Buffer.from(`PUT User ${req.params?.id}`, "utf-8");
   });
 
   router.delete("/users/:id", (req, res) => {
-    res.body = `DELETE User ${req.params?.id}`;
+    res.body = Buffer.from(`DELETE User ${req.params?.id}`, "utf-8");
   });
 
   // Test GET
@@ -166,7 +172,10 @@ test("router pattern matching with complex URL patterns", async (t) => {
       t.is(req.params?.userId, "user123");
       t.is(req.params?.orderId, "order456");
       t.is(req.params?.itemId, "item789");
-      res.body = `API call: User ${req.params?.userId}, Order ${req.params?.orderId}, Item ${req.params?.itemId}`;
+      res.body = Buffer.from(
+        `API call: User ${req.params?.userId}, Order ${req.params?.orderId}, Item ${req.params?.itemId}`,
+        "utf-8"
+      );
     }
   );
 
@@ -189,7 +198,7 @@ test("router pattern matching with simple filenames", async (t) => {
 
   router.get("/files/:filename", (req, res) => {
     t.is(req.params?.filename, "myfile");
-    res.body = `File: ${req.params?.filename}`;
+    res.body = Buffer.from(`File: ${req.params?.filename}`, "utf-8");
   });
 
   await router.processMessage({
@@ -208,7 +217,7 @@ test("router pattern matching with numeric parameters", async (t) => {
 
   router.get("/posts/:id", (req, res) => {
     t.is(req.params?.id, "42");
-    res.body = `Post ID: ${req.params?.id}`;
+    res.body = Buffer.from(`Post ID: ${req.params?.id}`, "utf-8");
   });
 
   await router.processMessage({
@@ -226,7 +235,7 @@ test("router pattern matching with case insensitive method matching", async (t) 
   const router = new PearRequestRouter(pipe);
 
   router.get("/users/:id", (req, res) => {
-    res.body = `User ${req.params?.id}`;
+    res.body = Buffer.from(`User ${req.params?.id}`, "utf-8");
   });
 
   // Test with lowercase method
@@ -253,7 +262,7 @@ test("router returns 404 for non-matching routes", async (t) => {
   const router = new PearRequestRouter(pipe);
 
   router.get("/users/:id", (req, res) => {
-    res.body = "User found";
+    res.body = Buffer.from("User found", "utf-8");
   });
 
   // Test non-matching route
@@ -273,7 +282,7 @@ test("router returns 404 for non-matching methods", async (t) => {
   const router = new PearRequestRouter(pipe);
 
   router.get("/users/:id", (req, res) => {
-    res.body = "User found";
+    res.body = Buffer.from("User found", "utf-8");
   });
 
   // Test with POST method on GET route
@@ -314,7 +323,7 @@ test("router handles async route handlers", async (t) => {
   router.get("/async/:id", async (req, res) => {
     // Simulate async operation
     await new Promise((resolve) => setTimeout(resolve, 10));
-    res.body = `Async User ${req.params?.id}`;
+    res.body = Buffer.from(`Async User ${req.params?.id}`, "utf-8");
   });
 
   await router.processMessage({
@@ -334,7 +343,7 @@ test("router handles request with body and headers", async (t) => {
   router.post("/users/:id", (req, res) => {
     t.is(req.body, "test body");
     t.is(req.headers?.authorization, "Bearer token123");
-    res.body = `Created user ${req.params?.id}`;
+    res.body = Buffer.from(`Created user ${req.params?.id}`, "utf-8");
     res.headers = { "Content-Type": "application/json" };
   });
 
@@ -356,15 +365,15 @@ test("router handles multiple routes with different patterns", async (t) => {
   const router = new PearRequestRouter(pipe);
 
   router.get("/users/:id", (req, res) => {
-    res.body = `User ${req.params?.id}`;
+    res.body = Buffer.from(`User ${req.params?.id}`, "utf-8");
   });
 
   router.get("/posts/:id", (req, res) => {
-    res.body = `Post ${req.params?.id}`;
+    res.body = Buffer.from(`Post ${req.params?.id}`, "utf-8");
   });
 
   router.get("/comments/:id", (req, res) => {
-    res.body = `Comment ${req.params?.id}`;
+    res.body = Buffer.from(`Comment ${req.params?.id}`, "utf-8");
   });
 
   // Test first route

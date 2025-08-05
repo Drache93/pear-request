@@ -38,14 +38,20 @@ class PearRequestRouter {
   delete(path, handler) {
     this.route("DELETE", path, handler);
   }
-  sendResponse(response) {
-    const body = Buffer.isBuffer(response.body) ? response.body : Buffer.from(response.body, "utf-8");
-    this.pipe.write(cenc.encode(responseEncoding, {
+  async sendResponse(response) {
+    const body = response.body ? Buffer.isBuffer(response.body) ? response.body : Buffer.from(response.body, "utf-8") : Buffer.alloc(0);
+    const message = {
       id: response.id,
       body,
       headers: response.headers || { "Content-Type": "text/html" },
       status: response.status || 200
-    }));
+    };
+    const encoded = cenc.encode(responseEncoding, message);
+    const encodedLength = cenc.encode(cenc.uint32, encoded.length);
+    const canWrite = this.pipe.write(Buffer.concat([encodedLength, encoded]));
+    if (!canWrite) {
+      await new Promise((resolve) => this.pipe.once("drain", resolve));
+    }
   }
   async handleRequest(request) {
     const { method, url, id } = request;
@@ -65,11 +71,12 @@ class PearRequestRouter {
       try {
         const response = {
           id,
-          body: Buffer.from("", "utf-8"),
+          body: null,
           headers: { "Content-Type": "text/html" }
         };
         await route.handler({ ...request, params }, response);
-        this.sendResponse(response);
+        console.log("response", response);
+        await this.sendResponse(response);
       } catch (error) {
         console.error("Route handler error:", error);
         this.sendResponse({
@@ -164,23 +171,43 @@ function create(pipe) {
     overrideMimeType(mimeType) {
       this.mimeType = mimeType;
     }
-    setRequestHeader(header, value) {
-      this.headers[header] = value;
+    setRequestHeader(header2, value) {
+      this.headers[header2] = value;
     }
     addEventListener(event, callback) {
       this.events[event] = callback;
     }
   }
+  let incomingBuffer = Buffer.alloc(0);
+  let expectedLength = 0;
   pipe.on("data", (data) => {
-    const { id, body, headers } = cenc2.decode(responseEncoding, data);
-    const pendingRequest = pendingRequests[id];
-    if (pendingRequest) {
-      pendingRequest.readyState = 4;
-      pendingRequest._response = body;
-      pendingRequest._responseHeaders = headers;
-      pendingRequest.status = 200;
-      pendingRequest.statusText = "OK";
-      pendingRequest["onload"]?.();
+    incomingBuffer = Buffer.concat([incomingBuffer, Buffer.from(data)]);
+    try {
+      if (incomingBuffer.length < 4) {
+        return;
+      }
+      if (expectedLength === 0) {
+        const length = cenc2.decode(cenc2.uint32, incomingBuffer.subarray(0, 4));
+        expectedLength = length;
+        incomingBuffer = incomingBuffer.subarray(4);
+      }
+      if (incomingBuffer.length < expectedLength) {
+        return;
+      }
+      const { id, body, headers } = cenc2.decode(responseEncoding, incomingBuffer);
+      const pendingRequest = pendingRequests[id];
+      if (pendingRequest) {
+        pendingRequest._response = pendingRequest._response ? Buffer.concat([pendingRequest._response, body]) : body;
+        pendingRequest.status = 200;
+        pendingRequest.statusText = "OK";
+        pendingRequest._responseHeaders = headers;
+        pendingRequest.readyState = 4;
+        pendingRequest["onload"]?.();
+      }
+      incomingBuffer = Buffer.alloc(0);
+      expectedLength = 0;
+    } catch (error) {
+      console.error("Error decoding header", error);
     }
   });
   return PearRequest;

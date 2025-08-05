@@ -10,7 +10,8 @@ export interface RequestContext {
 
 export interface ResponseContext {
   id: string;
-  body: Buffer;
+  body: Buffer | null;
   headers?: Record<string, string>;
   status?: number;
+  hasMore?: boolean;
 }

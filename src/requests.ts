@@ -1,6 +1,8 @@
 import b4a from "b4a";
 import cenc from "compact-encoding";
 import { requestEncoding, responseEncoding } from "./encoding";
+// @ts-ignore
+import { getHeader, header } from "compact-encoding-struct";
 import type { RequestContext, ResponseContext } from "./types";
 
 export function create(pipe: any) {
@@ -105,22 +107,51 @@ export function create(pipe: any) {
     }
   }
 
+  let incomingBuffer = Buffer.alloc(0);
+  let expectedLength = 0;
+
   pipe.on("data", (data: Uint8Array) => {
-    const { id, body, headers } = cenc.decode<ResponseContext>(
-      responseEncoding,
-      data
-    );
+    incomingBuffer = Buffer.concat([incomingBuffer, Buffer.from(data)]);
 
-    const pendingRequest = pendingRequests[id];
-    if (pendingRequest) {
-      pendingRequest.readyState = 4;
-      // TODO: handle body type
-      pendingRequest._response = body;
-      pendingRequest._responseHeaders = headers;
-      pendingRequest.status = 200;
-      pendingRequest.statusText = "OK";
+    try {
+      if (incomingBuffer.length < 4) {
+        return;
+      }
 
-      pendingRequest["onload"]?.();
+      if (expectedLength === 0) {
+        const length = cenc.decode(cenc.uint32, incomingBuffer.subarray(0, 4));
+        expectedLength = length;
+        incomingBuffer = incomingBuffer.subarray(4);
+      }
+
+      if (incomingBuffer.length < expectedLength) {
+        return;
+      }
+
+      const { id, body, headers } = cenc.decode<ResponseContext>(
+        responseEncoding,
+        incomingBuffer
+      );
+
+      const pendingRequest = pendingRequests[id];
+      if (pendingRequest) {
+        // TODO: handle body type
+        pendingRequest._response = pendingRequest._response
+          ? Buffer.concat([pendingRequest._response, body!])
+          : body!;
+
+        pendingRequest.status = 200;
+        pendingRequest.statusText = "OK";
+        pendingRequest._responseHeaders = headers;
+        pendingRequest.readyState = 4;
+
+        pendingRequest["onload"]?.();
+      }
+
+      incomingBuffer = Buffer.alloc(0);
+      expectedLength = 0;
+    } catch (error) {
+      console.error("Error decoding header", error);
     }
   });
 
