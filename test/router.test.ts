@@ -15,14 +15,14 @@ test("router pattern matching with parameters", async (t) => {
   const router = new PearRequestRouter(pipe);
 
   // Test basic parameter extraction
-  router.get("/users/:id", (req, res) => {
+  router.post("/api/projects/:id/upvote", (req, res) => {
     t.is(req.params?.id, "123");
     res.body = `User ${req.params?.id}`;
   });
 
   await router.processMessage({
-    method: "GET",
-    url: "/users/123",
+    method: "POST",
+    url: "/api/projects/123/upvote",
     id: "test-1",
   });
 

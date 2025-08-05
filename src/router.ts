@@ -1,21 +1,7 @@
-import b4a from "b4a";
+import cenc from "compact-encoding";
 import URLPattern from "url-pattern";
-
-export interface RequestContext {
-  method: string;
-  url: string;
-  body?: any;
-  id: string;
-  headers?: Record<string, string>;
-  params?: Record<string, string>;
-}
-
-export interface ResponseContext {
-  id: string;
-  body: string;
-  headers?: Record<string, string>;
-  status?: number;
-}
+import { requestEncoding, responseEncoding } from "./encoding";
+import type { RequestContext, ResponseContext } from "./types";
 
 export type RouteHandler = (
   req: RequestContext,
@@ -60,17 +46,17 @@ export class PearRequestRouter {
 
   // Send response through the pipe
   private sendResponse(response: ResponseContext) {
+    const body = Buffer.isBuffer(response.body)
+      ? response.body
+      : Buffer.from(response.body, "utf-8");
+
     this.pipe.write(
-      b4a.from(
-        JSON.stringify({
-          type: "response",
-          id: response.id,
-          body: response.body,
-          headers: response.headers || { "Content-Type": "text/html" },
-          status: response.status || 200,
-        }),
-        "utf-8"
-      )
+      cenc.encode(responseEncoding, {
+        id: response.id,
+        body: body,
+        headers: response.headers || { "Content-Type": "text/html" },
+        status: response.status || 200,
+      })
     );
   }
 
@@ -80,7 +66,11 @@ export class PearRequestRouter {
 
     // Extract path part from URL (remove query parameters)
     // TODO: Handle query parameters
-    const path = url.split("?")[0] || url;
+    const [path, query] = url.split("?");
+
+    if (!path) {
+      throw new Error("Invalid URL");
+    }
 
     // Find matching route
     const [route, params] = this.routes.reduce<[Route | null, any]>(
@@ -101,7 +91,7 @@ export class PearRequestRouter {
       try {
         const response: ResponseContext = {
           id,
-          body: "",
+          body: Buffer.from("", "utf-8"),
           headers: { "Content-Type": "text/html" },
         };
 
@@ -111,7 +101,7 @@ export class PearRequestRouter {
         console.error("Route handler error:", error);
         this.sendResponse({
           id,
-          body: "Internal Server Error",
+          body: Buffer.from("Internal Server Error", "utf-8"),
           headers: { "Content-Type": "text/plain" },
           status: 500,
         });
@@ -120,7 +110,7 @@ export class PearRequestRouter {
       // Route not found
       this.sendResponse({
         id,
-        body: "Not Found",
+        body: Buffer.from("Not Found", "utf-8"),
         headers: { "Content-Type": "text/plain" },
         status: 404,
       });
@@ -129,7 +119,10 @@ export class PearRequestRouter {
 
   // Process incoming message
   async processMessage(message: any) {
-    const { method, body, url, id } = message;
+    const { method, body, url, id } = cenc.decode<RequestContext>(
+      requestEncoding,
+      message
+    );
 
     await this.handleRequest({ method, url, body, id });
   }

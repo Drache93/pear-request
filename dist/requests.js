@@ -1,5 +1,22 @@
+// src/encoding.ts
+import c from "compact-encoding";
+import { compile } from "compact-encoding-struct";
+var requestEncoding = compile({
+  id: c.string,
+  body: c.buffer,
+  url: c.string,
+  method: c.string
+});
+var responseEncoding = compile({
+  id: c.string,
+  body: c.buffer,
+  headers: c.json,
+  status: c.uint16
+});
+
 // src/requests.ts
 import b4a from "b4a";
+import cenc from "compact-encoding";
 function create(pipe) {
   const pendingRequests = {};
 
@@ -18,7 +35,7 @@ function create(pipe) {
     headers = {};
     events = {};
     _responseHeaders;
-    response;
+    _response;
     status;
     statusText;
     static _pendingRequests = {};
@@ -28,8 +45,20 @@ function create(pipe) {
         ...this._responseHeaders
       };
     }
+    get response() {
+      if (!this._response) {
+        return null;
+      }
+      if (this.mimeType === "application/json") {
+        return JSON.parse(b4a.toString(this._response, "utf-8"));
+      } else if (this.mimeType?.startsWith("text/")) {
+        return b4a.toString(this._response, "utf-8");
+      } else {
+        return this._response;
+      }
+    }
     get responseText() {
-      return this.response?.toString("utf-8");
+      return this._response?.toString("utf-8");
     }
     get responseType() {
       return this.mimeType;
@@ -43,12 +72,13 @@ function create(pipe) {
       const id = crypto.randomUUID();
       this.readyState = 2;
       pendingRequests[id] = this;
-      pipe.write(b4a.from(JSON.stringify({
+      const buff = !body ? Buffer.alloc(0) : Buffer.isBuffer(body) ? body : Buffer.from(body, "utf-8");
+      pipe.write(cenc.encode(requestEncoding, {
         id,
         method: this.method,
         url: this.url,
-        body
-      }), "utf-8"));
+        body: buff
+      }));
     }
     upload = new PearRequestUpload;
     overrideMimeType(mimeType) {
@@ -62,12 +92,11 @@ function create(pipe) {
     }
   }
   pipe.on("data", (data) => {
-    const message = b4a.toString(data, "utf-8");
-    const { id, body, headers } = JSON.parse(message);
+    const { id, body, headers } = cenc.decode(responseEncoding, data);
     const pendingRequest = pendingRequests[id];
     if (pendingRequest) {
       pendingRequest.readyState = 4;
-      pendingRequest.response = body;
+      pendingRequest._response = body;
       pendingRequest._responseHeaders = headers;
       pendingRequest.status = 200;
       pendingRequest.statusText = "OK";
